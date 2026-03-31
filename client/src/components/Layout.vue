@@ -23,19 +23,41 @@
           <span>测试工作台</span>
         </el-menu-item>
 
-        <el-menu-item index="/projects">
-          <el-icon><Folder /></el-icon>
-          <span>项目管理</span>
-        </el-menu-item>
+        <!-- 项目类测试 -->
+        <el-sub-menu index="project-test">
+          <template #title>
+            <el-icon><FolderOpened /></el-icon>
+            <span>项目类测试</span>
+          </template>
+          <el-menu-item index="/project-test/projects">
+            <span>项目管理</span>
+          </el-menu-item>
+          <el-menu-item index="/project-test/testcases-project">
+            <span>项目用例库</span>
+          </el-menu-item>
+        </el-sub-menu>
 
-        <el-menu-item index="/requirements">
-          <el-icon><Document /></el-icon>
-          <span>需求管理</span>
-        </el-menu-item>
+        <!-- 日常需求测试 -->
+        <el-sub-menu index="daily-test">
+          <template #title>
+            <el-icon><Document /></el-icon>
+            <span>日常需求测试</span>
+          </template>
+          <el-menu-item index="/daily-test/versions">
+            <span>版本管理</span>
+          </el-menu-item>
+          <el-menu-item index="/daily-test/requirements">
+            <span>需求管理</span>
+          </el-menu-item>
+          <el-menu-item index="/daily-test/testcases-daily">
+            <span>日常用例库</span>
+          </el-menu-item>
+        </el-sub-menu>
 
-        <el-menu-item index="/versions">
-          <el-icon><Collection /></el-icon>
-          <span>版本管理</span>
+        <!-- 公共模块 -->
+        <el-menu-item index="/defects">
+          <el-icon><Warning /></el-icon>
+          <span>缺陷库</span>
         </el-menu-item>
 
         <el-menu-item index="/returns">
@@ -43,15 +65,61 @@
           <span>退回台账</span>
         </el-menu-item>
 
-        <el-menu-item index="/testcases">
-          <el-icon><Tickets /></el-icon>
-          <span>测试用例库</span>
-        </el-menu-item>
+        <!-- 报表模块 -->
+        <el-sub-menu index="reports">
+          <template #title>
+            <el-icon><DataBoard /></el-icon>
+            <span>报表管理</span>
+          </template>
+          <el-menu-item index="/reports/weekly-reports">
+            <span>测试室周报</span>
+          </el-menu-item>
+          <el-menu-item index="/reports/personal-reports">
+            <span>个人工作汇报</span>
+          </el-menu-item>
+        </el-sub-menu>
 
-        <el-menu-item index="/defects">
-          <el-icon><Warning /></el-icon>
-          <span>缺陷库</span>
-        </el-menu-item>
+        <!-- 测试资产库 -->
+        <el-sub-menu index="test-assets">
+          <template #title>
+            <el-icon><Box /></el-icon>
+            <span>测试资产库</span>
+          </template>
+          <el-menu-item index="/test-assets/asset-list">
+            <span>资产列表</span>
+          </el-menu-item>
+          <el-menu-item index="/test-assets/experience-list">
+            <span>测试经验库</span>
+          </el-menu-item>
+        </el-sub-menu>
+
+        <!-- AI智能助手 -->
+        <el-sub-menu index="ai-tools">
+          <template #title>
+            <el-icon><MagicStick /></el-icon>
+            <span>AI智能助手</span>
+          </template>
+          <el-menu-item index="/ai-tools/ai-generate">
+            <span>AI用例生成</span>
+          </el-menu-item>
+          <el-menu-item index="/ai-tools/ai-check">
+            <span>AI用例检查</span>
+          </el-menu-item>
+        </el-sub-menu>
+
+        <!-- 系统管理 -->
+        <el-sub-menu index="system">
+          <template #title>
+            <el-icon><Setting /></el-icon>
+            <span>系统管理</span>
+          </template>
+          <el-menu-item index="/system/user-management">
+            <span>用户与权限</span>
+          </el-menu-item>
+          <el-menu-item index="/system/systems">
+            <span>系统字典</span>
+          </el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </div>
 

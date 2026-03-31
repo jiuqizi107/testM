@@ -5,7 +5,7 @@ const { authMiddleware } = require('../middleware/auth');
 
 // 获取项目列表
 router.get('/', authMiddleware, (req, res) => {
-  const { status, keyword, page = 1, pageSize = 10 } = req.query;
+  const { status, keyword, test_status, page = 1, pageSize = 10 } = req.query;
   const offset = (page - 1) * pageSize;
 
   let sql = `
@@ -21,9 +21,14 @@ router.get('/', authMiddleware, (req, res) => {
     params.push(status);
   }
 
+  if (test_status) {
+    sql += ' AND p.test_status = ?';
+    params.push(test_status);
+  }
+
   if (keyword) {
-    sql += ' AND (p.name LIKE ? OR p.description LIKE ?)';
-    params.push(`%${keyword}%`, `%${keyword}%`);
+    sql += ' AND (p.name LIKE ? OR p.project_code LIKE ? OR p.description LIKE ?)';
+    params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
   }
 
   // 获取总数
@@ -84,16 +89,51 @@ router.get('/:id', authMiddleware, (req, res) => {
 
 // 创建项目
 router.post('/', authMiddleware, (req, res) => {
-  const { name, description, owner_id } = req.body;
+  const {
+    name, description, owner_id, project_code, system_id, system_name,
+    project_manager, test_status, submit_test_date, sys_test_start_date,
+    sys_test_end_date, production_date, test_leader, requirement_doc,
+    design_doc, milestone_plan, test_plan
+  } = req.body;
 
   if (!name) {
     return res.status(400).json({ message: '项目名称不能为空' });
   }
 
+  // 必填字段校验
+  if (!project_code) {
+    return res.status(400).json({ message: '项目编号不能为空' });
+  }
+  if (!description) {
+    return res.status(400).json({ message: '项目描述不能为空' });
+  }
+  if (!system_id || !system_name) {
+    return res.status(400).json({ message: '所属系统不能为空' });
+  }
+  if (!project_manager) {
+    return res.status(400).json({ message: '研发经理不能为空' });
+  }
+  if (!test_leader) {
+    return res.status(400).json({ message: '测试负责人不能为空' });
+  }
+
+  // 检查项目编号唯一性
+  const existing = db.queryOne('SELECT id FROM projects WHERE project_code = ?', [project_code]);
+  if (existing) {
+    return res.status(400).json({ message: '项目编号已存在' });
+  }
+
   const result = db.run(`
-    INSERT INTO projects (name, description, owner_id)
-    VALUES (?, ?, ?)
-  `, [name, description, owner_id || req.user.id]);
+    INSERT INTO projects (name, description, owner_id, project_code, system_id, system_name,
+      project_manager, test_status, submit_test_date, sys_test_start_date, sys_test_end_date,
+      production_date, test_leader, requirement_doc, design_doc, milestone_plan, test_plan)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `, [
+    name, description, owner_id || req.user.id, project_code, system_id, system_name,
+    project_manager, test_status || '需求分析', submit_test_date, sys_test_start_date,
+    sys_test_end_date, production_date, test_leader, requirement_doc, design_doc,
+    milestone_plan, test_plan
+  ]);
 
   res.status(201).json({
     message: '项目创建成功',
@@ -103,30 +143,66 @@ router.post('/', authMiddleware, (req, res) => {
 
 // 更新项目
 router.put('/:id', authMiddleware, (req, res) => {
-  const { name, description, status, owner_id } = req.body;
+  const {
+    name, description, status, owner_id, project_code, system_id, system_name,
+    project_manager, test_status, submit_test_date, sys_test_start_date,
+    sys_test_end_date, production_date, test_leader, requirement_doc,
+    design_doc, milestone_plan, test_plan
+  } = req.body;
 
   const project = db.queryOne('SELECT * FROM projects WHERE id = ?', [req.params.id]);
   if (!project) {
     return res.status(404).json({ message: '项目不存在' });
   }
 
+  // 检查项目编号唯一性
+  if (project_code && project_code !== project.project_code) {
+    const existing = db.queryOne('SELECT id FROM projects WHERE project_code = ? AND id != ?', [project_code, req.params.id]);
+    if (existing) {
+      return res.status(400).json({ message: '项目编号已存在' });
+    }
+  }
+
   db.run(`
     UPDATE projects
-    SET name = ?, description = ?, status = ?, owner_id = ?, updated_at = CURRENT_TIMESTAMP
+    SET name = ?, description = ?, status = ?, owner_id = ?, project_code = ?,
+        system_id = ?, system_name = ?, project_manager = ?, test_status = ?,
+        submit_test_date = ?, sys_test_start_date = ?, sys_test_end_date = ?,
+        production_date = ?, test_leader = ?, requirement_doc = ?, design_doc = ?,
+        milestone_plan = ?, test_plan = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `, [
     name || project.name,
-    description || project.description,
+    description !== undefined ? description : project.description,
     status || project.status,
     owner_id || project.owner_id,
+    project_code !== undefined ? project_code : project.project_code,
+    system_id !== undefined ? system_id : project.system_id,
+    system_name !== undefined ? system_name : project.system_name,
+    project_manager !== undefined ? project_manager : project.project_manager,
+    test_status || project.test_status,
+    submit_test_date !== undefined ? submit_test_date : project.submit_test_date,
+    sys_test_start_date !== undefined ? sys_test_start_date : project.sys_test_start_date,
+    sys_test_end_date !== undefined ? sys_test_end_date : project.sys_test_end_date,
+    production_date !== undefined ? production_date : project.production_date,
+    test_leader !== undefined ? test_leader : project.test_leader,
+    requirement_doc !== undefined ? requirement_doc : project.requirement_doc,
+    design_doc !== undefined ? design_doc : project.design_doc,
+    milestone_plan !== undefined ? milestone_plan : project.milestone_plan,
+    test_plan !== undefined ? test_plan : project.test_plan,
     req.params.id
   ]);
 
   res.json({ message: '项目更新成功' });
 });
 
-// 删除项目
+// 删除项目（仅管理员可删除）
 router.delete('/:id', authMiddleware, (req, res) => {
+  // 检查权限
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: '仅管理员可删除项目' });
+  }
+
   const project = db.queryOne('SELECT * FROM projects WHERE id = ?', [req.params.id]);
   if (!project) {
     return res.status(404).json({ message: '项目不存在' });
@@ -140,6 +216,18 @@ router.delete('/:id', authMiddleware, (req, res) => {
   db.run('DELETE FROM projects WHERE id = ?', [req.params.id]);
 
   res.json({ message: '项目删除成功' });
+});
+
+// 获取系统字典列表（用于所属系统下拉选择）
+router.get('/systems', authMiddleware, (req, res) => {
+  const systems = db.queryAll('SELECT id, system_name, system_code FROM system_dictionary WHERE status = ? ORDER BY system_name', ['active']);
+  res.json(systems);
+});
+
+// 获取用户列表（用于研发经理、测试负责人下拉选择）
+router.get('/users', authMiddleware, (req, res) => {
+  const users = db.queryAll('SELECT id, real_name, username FROM users WHERE status = ? ORDER BY real_name', ['active']);
+  res.json(users);
 });
 
 module.exports = router;
